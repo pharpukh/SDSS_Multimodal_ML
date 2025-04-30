@@ -1,0 +1,1050 @@
+% main.tex
+%% This is the ctufit-thesis example file. It is used to produce theses
+%% for submission to Czech Technical University, Faculty of Information Technology.
+%%
+%% This is version 1.4.3, built 1. 4. 2025.
+%% 
+%% Get the newest version from
+%% https://gitlab.fit.cvut.cz/theses-templates/FITthesis-LaTeX
+%%
+%%
+%% Copyright 2024, Tomas Novacek
+%% Copyright 2021, Eliska Sestakova and Ondrej Guth
+%%
+%% This work may be distributed and/or modified under the
+%% conditions of the LaTeX Project Public License, either version 1.3
+%% of this license or (at your option) any later version.
+%% The latest version of this license is in
+%%  https://www.latex-project.org/lppl.txt
+%% and version 1.3 or later is part of all distributions of LaTeX
+%% version 2005/12/01 or later.
+%%
+%% This work has the LPPL maintenance status `maintained'.
+%%
+%% The current maintainer of this work is Tomas Novacek (novacto3@fit.cvut.cz).
+%% Alternatively, submit bug reports to the tracker at
+%% https://gitlab.fit.cvut.cz/theses-templates/FITthesis-LaTeX/issues
+%%
+%%
+
+% arara: xelatex
+% arara: biber
+% arara: xelatex
+% arara: xelatex
+
+\documentclass[english,bachelor,oneside]{ctufit-thesis}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% FILL IN THIS INFORMATION
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\ctufittitle{Application of Machine Learning to Predict Star Formation Rates in SDSS Data}
+\ctufitauthorfull{Bc. Farukh Rustamov}
+\ctufitauthorsurnames{Rustamov}
+\ctufitauthorgivennames{Farukh}
+\ctufitsupervisor{-----------}
+\ctufitdepartment{Department of Applied Mathematics}
+\ctufityear{2025}
+\ctufitdeclarationplace{Prague}
+\ctufitdeclarationdate{\today}
+\ctufitabstractCZE{%
+V této diplomové práci jsme se zaměřili na predikci rychlosti formování hvězd (SFR) v galaxiích využitím multimodálních dat ze Sloan Digital Sky Survey (SDSS). Nejprve jsme z původního katalogu SFR (DR7) vyfiltrovali objekty s chybějícími nebo nekvalitními hodnotami, čímž vznikla konečná sada 11 179 galaxií s validními fotometrickými i spektroskopickými měřeními. Pro předzpracování dat jsme využili HiSS-Cube pipeline, která generuje více rozlišení obrazových výřezů (64×64 až 4×4 px) a spekter (4620 až 289 vzorků), přičemž zachovává nejistoty měření a umožňuje efektivní dotazování.
+
+Pro regresní predikci logaritmu SFR (\texttt{AVG}) jsme porovnávali tři třídy modelů: rozhodovací stromy (DT), konvoluční neuronové sítě (VGGNet12) a gradientní boostování (LightGBM). Každý model jsme testovali ve třech režimech: fotografie-only, spektra-only a multimodální fúze (early fusion i late fusion). Hyperparametry jsme ladili pomocí grid-search a 5-násobné křížové validace. Jako metriky jsme sledovali $R^2$, MAE, RMSE a NMAD.
+
+Výsledky ukázaly, že nejlepší výkon dosáhl early-fusion model LightGBM ($R^2=0.308$, MAE=0.19, RMSE=0.32) díky schopnosti stromových modelů efektivně kombinovat vizuální a spektrální rysy. VGGNet12 na obrázcích také dosahuje vysoké kvality ($R^2=0.262$), což potvrzuje sílu hlubokých CNN pro extrakci morfologických ukazatelů. Zajímavě nejnižší rozlišení spekter poskytlo lepší generalizaci díky účinku vestavěného vyhlazování.
+
+Tato práce demonstruje, že multimodální přístupy dokáží zachytit komplexní fyzikální a morfologické informace klíčové pro odhad SFR a otevírá cestu k dalšímu zkoumání pokročilých fúzních technik či zapojení doplňkových dat (kinematika, prostředí).}%
+
+\ctufitabstractENG{%
+In this thesis, we present a comprehensive study on predicting the star formation rate (SFR) in galaxies using multimodal data from the Sloan Digital Sky Survey (SDSS, DR7). We begin by filtering the original SFR catalogue to a high-quality subset of 11 179 galaxies with valid five-band photometry and one-dimensional spectra, processed via the HiSS-Cube pipeline to generate multi-resolution image cutouts (64×64 to 4×4 px) and spectral samplings (4620 to 289 bins) while preserving measurement uncertainties.
+
+We evaluate three classes of regression models—Decision Tree (DT), VGGNet12 convolutional neural network, and LightGBM gradient boosting—under three modalities: photometry-only, spectroscopy-only, and multimodal fusion (early and late fusion). Hyperparameter tuning is performed via grid search and five-fold cross-validation, and model performance is assessed by $R^2$, Mean Absolute Error (MAE), Root Mean Square Error (RMSE), and Normalized Median Absolute Deviation (NMAD).
+
+The best results are achieved by the early-fusion LightGBM model, reaching $R^2=0.308$, MAE=0.19, RMSE=0.32, demonstrating the strength of tree-based learners in combining visual and spectral features. VGGNet12 on photometric images alone also performs strongly ($R^2=0.262$), highlighting the power of deep CNNs for morphological analysis. Notably, the lowest spectral resolution often yielded better generalization due to implicit noise smoothing.
+
+Our findings confirm that multimodal machine learning can effectively capture complementary astrophysical cues for accurate SFR estimation. The methodological framework laid out here paves the way for exploring advanced fusion techniques (e.g., attention-based models) and incorporating additional data modalities such as environmental or kinematic measurements in future research.}%
+\ctufitkeywordsCZE{strojové učení, SDSS, rychlost formování hvězd, spektroskopie, fotometrie, multimodální fúze, HiSS-Cube.}
+\ctufitkeywordsENG{machine learning, SDSS, star formation rate, spectroscopy, photometry, multimodal fusion, HiSS-Cube}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% END FILL IN
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\hypersetup{
+    pdfpagelayout=TwoPageRight,
+    colorlinks=false,
+    allcolors=decoration,
+    pdfborder={0 0 0.1}
+}
+
+\RequirePackage{pdfpages}[2020/01/28]
+\usepackage{dirtree}
+\usepackage{subcaption}
+\usepackage[
+  backend=biber,    style=iso-numeric,
+  natbib=true             
+]{biblatex} % changed by 
+\usepackage{lipsum,tikz}
+\addbibresource{references.bib}
+\usepackage{xurl}
+\usepackage{listings}
+\usepackage{csquotes}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{url}
+
+\begin{document}
+\frontmatter\frontmatterinit
+
+\thispagestyle{empty}\maketitle\thispagestyle{empty}\cleardoublepage
+
+\includepdf[pages={1-}]{rustafar-assignment.pdf}
+
+\imprintpage
+\stopTOCentries
+
+\begin{acknowledgmentpage}
+    I would like to express my sincere gratitude to my supervisor, \textbf{RNDr. Petr Škoda, CSc.}, for his valuable guidance, insightful feedback, and continuous support throughout the development of this thesis.
+
+    I would also like to thank \textbf{Ing. Ondřej Podsztavek} for his expert advice and assistance with machine learning methods, which significantly contributed to the quality and depth of the experimental work.
+
+    All computations for this thesis were carried out on the RCI cluster, providing access to high-performance computing resources and enabling more complex and large-scale machine learning experiments.
+    The authors acknowledge the support of the OP VVV funded project 
+    CZ.02.1.01/0.0/0.0/16\_019/0000765 ``Research Center for Informatics''.
+
+    The access to the computational infrastructure of the OP VVV funded project 
+    CZ.02.1.01/0.0/0.0/16\_019/0000765 ``Research Center for Informatics'' is also gratefully acknowledged. Most of the experiments and data processing were carried out using the RCI cluster.
+
+    Funding for the Sloan Digital Sky Survey has been provided by the Alfred P. Sloan Foundation, the U.S. Department of Energy Office of Science, and the Participating Institutions. SDSS acknowledges support and resources from the Center for High-Performance Computing at the University of Utah. The SDSS web site is www.sdss.org. SDSS is managed by the Astrophysical Research Consortium for the Participating Institutions of the SDSS Collaboration, including the Brazilian Participation Group, the Carnegie Institution for Science, Carnegie Mellon University, the Chilean Participation Group, the French Participation Group, Harvard-Smithsonian Center for Astrophysics, Instituto de Astrofísica de Canarias, The Johns Hopkins University, Kavli Institute for the Physics and Mathematics of the Universe (IPMU) / University of Tokyo, the Korean Participation Group, Lawrence Berkeley National Laboratory, Leibniz Institut für Astrophysik Potsdam (AIP), Max-Planck-Institut für Astronomie (MPIA Heidelberg), Max-Planck-Institut für Astrophysik (MPA Garching), Max-Planck-Institut für Extraterrestrische Physik (MPE), National Astronomical Observatories of China, New Mexico State University, New York University, University of Notre Dame, Observatório Nacional / MCTI, The Ohio State University, Pennsylvania State University, Shanghai Astronomical Observatory, United Kingdom Participation Group, Universidad Nacional Autónoma de México, University of Arizona, University of Colorado Boulder, University of Oxford, University of Portsmouth, University of Utah, University of Virginia, University of Washington, University of Wisconsin, Vanderbilt University, and Yale University.
+    We further acknowledge the publicly released photometric and spectroscopic data from SDSS, without which the analysis presented here would not have been possible.
+
+    Finally, we thank the HiSS-Cube pipeline and its creator, Ing. Jiří Nádvorník, Ph.D., for processing the SDSS data into a scalable, multi-resolution semi-sparse data cube that preserves measurement uncertainties and makes interactive visualization and machine-learning experiments on large astronomical datasets straightforward.
+    
+\end{acknowledgmentpage}
+
+\begin{declarationpage}
+I hereby declare that the presented thesis is my own work and that I have cited all
+sources of information in accordance with the Guideline for adhering to ethical
+principles when elaborating an academic final thesis.
+I acknowledge that my thesis is subject to the rights and obligations stipulated by the
+Act No. 121/2000 Coll., the Copyright Act, as amended, in particular that the Czech
+Technical University in Prague has the right to conclude a license agreement on the
+utilization of this thesis as a school work under the provisions of Article 60 (1) of the
+Act.
+\end{declarationpage}
+
+\printabstractpage
+
+\tableofcontents
+\listoffigures
+\begingroup
+\let\clearpage\relax
+\listoftables
+\thectufitlistingscommand
+\endgroup
+
+\chapter{\thectufitabbreviationlabel}
+\begin{tabular}{rl}
+SDSS  & Sloan Digital Sky Survey \\
+SFR   & Star Formation Rate \\
+CNN   & Convolutional Neural Network \\
+MFCC  & Mel-Frequency Cepstral Coefficients \\
+MAE   & Mean Absolute Error \\
+RMSE  & Root Mean Square Error \\
+NMAD  & Normalized Median Absolute Deviation \\
+DT    & Decision Tree \\
+VGG   & Visual Geometry Group \\
+ML    & Machine Learning \\
+LLM   & Large Language Model \\
+LightGBM & Light Gradient Boosting Machine \\
+HDF5  & Hierarchical Data Format version 5 \\
+RCI   & Research Computing Infrastructure \\
+MLP   & Multilayer Perceptron \\
+PCA   & Principal Component Analysis \\
+t-SNE & t-Distributed Stochastic Neighbor Embedding \\
+UMAP  & Uniform Manifold Approximation and Projection \\
+VO    & Virtual Observatory \\
+HMS   & Hierarchical Semi-Sparse \\
+\end{tabular}
+
+\resumeTOCentries
+\mainmatter\mainmatterinit
+
+%%%%%%%%%%%%%%%%%%%
+% Chapter: Introduction
+%%%%%%%%%%%%%%%%%%%
+\chapter{Introduction}
+
+\section{General Description and Relevance of the Study}
+
+In recent years, multimodal machine learning has become a rapidly advancing area of research with applications ranging from autonomous driving and medical diagnostics to astronomical data analysis. The integration of different data types—such as images, text, audio, and structured signals—enables models to capture richer representations and make more accurate predictions in complex domains.
+
+In astrophysics, large-scale surveys like the Sloan Digital Sky Survey (SDSS) \cite{york2000sloan} provide both photometric and spectroscopic data for millions of celestial objects. These complementary modalities offer unique views: images capture structural and morphological features, while spectra encode detailed physical and chemical properties.
+
+This thesis investigates the application of multimodal machine learning techniques to predict the **star formation rate (SFR)** \cite{lopes2021effects} in galaxies using data from SDSS. The motivation lies in the need to efficiently process massive astronomical datasets and build models that leverage the strengths of both image-based and spectroscopic inputs.
+
+\section{SDSS Data Releases} 
+The Sloan Digital Sky Survey issues a sequence of incremental Data Releases (DR1, DR2, \dots), each reprocessing the full imaging and spectroscopic dataset through updated reduction pipelines and adding newly acquired observations. The original technical summary of SDSS is given by York et al.\ \cite{york2000sloan}, and DR7 represents the completion of the Legacy Survey, covering over 8000 deg$^2$ with more than 1.6 million galaxy spectra \cite{Abazajian2009}. Subsequent releases under SDSS-III and SDSS-IV (e.g., DR13, DR14) expanded the footprint, incorporated the BOSS and eBOSS redshift programs, and further improved photometric calibration and spectrograph performance \cite{Albareti2017}.
+
+
+In this thesis we primarily use data from SDSS Data Release 7 (DR7) \cite{SDSSData19:online}.  
+Each subsequent release extends sky coverage, improves calibration of photometry and spectroscopy,  
+and adds new object classifications. Choosing the appropriate release is crucial,  
+since it directly impacts the depth and quality of our SFR predictions.
+
+\section{HiSS-Cube Software Infrastructure}
+\label{sec:hisscube}
+
+A wide variety of approaches exist for visualizing and analyzing large astronomical data cubes, but most either rely on static FITS files or lose the native measurement uncertainties when building coarser resolutions. To address these limitations, we developed the \emph{Hierarchical Semi-Sparse Cube (HiSS-Cube)} framework based on HDF5, which offers:
+
+\begin{itemize}
+  \item \textbf{Multi-domain fusion:} Supports imaging, spectral, and time-series data in a single cube.
+  \item \textbf{Preserved uncertainties:} Constructs lower-resolution representations without discarding per-pixel or per-bin error estimates.
+  \item \textbf{Scalability:} Leverages hierarchical indexing (HEALPix) and semi-sparse storage to enable rapid spatial queries over billions of measurements.
+  \item \textbf{Machine-learning ready:} Exports arbitrary resolution cutouts to contiguous NumPy arrays, avoiding repeated I/O or reprocessing when changing model input sizes.
+  \item \textbf{Virtual Observatory compatibility:} Exports to VOTable/FITS for use in standard VO tools.
+  \item \textbf{Performance gains:} Benchmarks on SDSS Stripe 82 data show HiSS-Cube is faster by orders of magnitude compared to raw FITS exports for both visualization and ML pipelines.
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{data/hisscube_gallery.png}
+  \caption{HiSS-Cube data flow pipeline: from SDSS raw FITS files to multi-layered, semi-transparent cubes in HDF5 for visualization and machine learning. Image from \cite{nadvornik2021hiss}.}
+  \label{fig:hisscube_pipeline}
+\end{figure}
+
+The core idea is to precompute a hierarchy of semi-sparse, multi-resolution cubes that retain scientific uncertainties at every scale. This allows, for example, an ML workflow to first coarse‐scan a large region, then seamlessly drill down to higher resolutions without re-ingesting or re-calibrating the data. \cite{nadvornik2021hiss}
+
+
+\subsection{Prediction Experiments}
+To assess the value of each data modality, we perform three sets of experiments:
+\begin{itemize}
+  \item \textbf{Photometry-only.} Train and evaluate models using only the $u,g,r,i,z$ image cutouts.
+  \item \textbf{Spectroscopy-only.} Train and evaluate models using only the one-dimensional spectra.
+  \item \textbf{Multimodal fusion.} Combine image and spectral features via both early-fusion (feature concatenation) and late-fusion (prediction averaging) strategies.
+\end{itemize}
+
+\subsection{Role of Spectroscopy vs.\ Photometry} % *** FIX: explain complementary information ***
+Spectroscopic data provide direct physical diagnostics—emission‐line luminosities (e.g., H$\alpha$)  
+which scale with instantaneous SFR, as well as redshift measurements for distance correction  
+\cite{kennicutt1998star}. Photometric images encode morphological details, color gradients, and  
+integrated broadband flux, reflecting the galaxy’s stellar population and dust content.  
+By fusing these complementary views, our models can leverage both fine‐scale spectral physics  
+and global structural cues, leading to more robust and accurate SFR predictions.
+
+\section{Research Challenges}
+
+Working with the SDSS data presents several challenges:
+Working with the SDSS data presents several challenges:
+\begin{enumerate}
+  \item \textbf{Data Filtering.} The SDSS SFR catalog originally contains over 4.8 million entries, but only a fraction have both reliable multi-band cutouts and valid SFR measurements. We must exclude objects with missing photometry or spectroscopy, undefined SFR values (NaN or the placeholder $-99$), and non-galactic sources, reducing the sample to a few $\times10^4$ galaxies suitable for regression \cite{SDSS_SFR_DOC}.
+  \item \textbf{Quality of Images and Spectra.} The HiSS-Cube pipeline provides four image resolutions (64×64, 32x32, 16x16, 8×8 px) and four spectral samplings (4620,2310,1155,577,289 bins). While higher resolutions capture finer morphological and spectral features, they also incur substantially greater computational cost and risk overfitting; lower resolutions run faster but may smooth out diagnostically important details. Striking the optimal balance is non-trivial \cite{nadvornik2021hiss}.
+  \item \textbf{Multiple Objects in One Image.} SDSS cutouts sometimes include overlapping galaxies or stars, leading to blended light profiles that confuse downstream feature extractors. To ensure each input represents a single target galaxy, we apply automatic segmentation via thresholding and connected-component labeling, flagging and removing multi-object cutouts \cite{sezgin2004survey,GonzalezWoods2008}.
+\end{enumerate}
+
+\section{Objectives and Tasks}
+
+The primary objective of this thesis is to develop an optimal methodology for predicting SFR using SDSS data. To achieve this, the following tasks will be addressed:
+\begin{enumerate}
+    \item Perform a detailed analysis of the raw data, assess its quality, and apply filtering.
+    \item Develop algorithms for the automatic detection and isolation of objects within images.
+    \item Investigate the impact of different quality levels of images and spectra on prediction accuracy.
+    \item Compare the effectiveness of models using single modalities with multimodal approaches.
+    \item Conduct a comparative study on the publicly available Scene dataset, adapting insights to SDSS in order to validate our multimodal pipeline under controlled conditions.
+    \item Quantify the relative performance gain of multimodal fusion over unimodal (image-only and spectrum-only) baselines on a structurally similar external dataset to demonstrate the added value of combining modalities.
+    \item Benchmark and compare training and inference runtimes of all models and modalities on both SDSS and the external dataset, to assess computational scalability and guide practical deployment strategies.
+\end{enumerate}
+
+\section{Terminology and Illustrations}
+
+\subsection{Spectra and Spectral Analysis}
+
+\subsubsection{Definition of a Spectrum}
+A spectrum in astronomy represents the dependence of an object's emitted intensity on wavelength. Specialized spectrographs attached to telescopes record these spectra \cite{tennyson2019astronomical}.
+
+\subsubsection{Why Spectral Analysis Is Needed}
+\begin{itemize}
+    \item \textbf{Chemical Composition:} Spectral lines from elements such as hydrogen, oxygen, nitrogen, and iron appear at characteristic wavelengths, and their relative intensities allow us to derive abundances and metallicity in the interstellar medium. For example, the ratio of [O III] to H\,$\beta$ lines is a common metallicity diagnostic \cite{Osterbrock2006}. These abundance measurements are crucial for understanding galactic chemical evolution and enrichment histories \cite{tennyson2019astronomical}.
+    \item \textbf{Velocity Measurements:} The Doppler shift of spectral lines provides direct measurements of radial velocities, enabling construction of rotation curves and estimates of dynamical mass in galaxies. Line broadening and asymmetries also reveal kinematic components such as outflows, inflows, and turbulent motions \cite{Osterbrock2006}. Such velocity diagnostics are essential for probing galaxy dynamics and dark matter distributions.
+    \item \textbf{Physical Conditions:} The relative strengths and widths of emission and absorption features encode the temperature, density, and ionization state of the gas. Line ratio diagnostics—such as the [S II] doublet for electron density and the Balmer decrement for dust extinction—help characterize the physical environment within H II regions and around active nuclei \cite{tennyson2019astronomical}. Understanding these conditions informs models of star-formation efficiency and feedback processes.
+\end{itemize}
+All of these diagnostics are discussed in \cite[p.~1–6]{tennyson2019astronomical}.
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{data/atom_spectrum}
+    \caption{Example of atomic spectral lines for different elements.\cite{Spectros98:online}}
+    \label{fig:atom_spectrum}
+\end{figure}
+
+\subsection{The SDSS \textit{u, g, r, i, z} Filters}
+SDSS uses five broadband filters—\textit{u}, \textit{g}, \textit{r}, \textit{i}, and \textit{z}—with effective wavelengths of 
+$u = 354\,$nm, $g = 477\,$nm, $r = 623\,$nm, $i = 762\,$nm, and $z = 913\,$nm.  
+Their full‐width at half‐maximum (FWHM) bandwidths are approximately  
+$\Delta u \approx 56\,$nm, $\Delta g \approx 138\,$nm, $\Delta r \approx 138\,$nm,  
+$\Delta i \approx 152\,$nm, and $\Delta z \approx 95\,$nm \cite{fukugita1996sloan}.  
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{data/ugriz}
+    \caption{Transmission curves of the SDSS \textit{u, g, r, i, z} filters.}
+    \label{fig:ugriz}
+\end{figure}
+
+\subsection{Star Formation Rate (SFR)}
+
+\subsubsection{What Is SFR}
+The star formation rate (SFR) measures how quickly a galaxy turns its available gas into new stars. It is given in solar masses per year ($M_{\odot}\,\mathrm{yr}^{-1}$), meaning, for example, that an SFR of 1 $M_{\odot}\,\mathrm{yr}^{-1}$ corresponds to the formation of one Sun’s worth of stars each year.  
+
+Beyond describing the galaxy’s current activity, SFR also helps us trace its life story: by comparing the present SFR to the average over past epochs, we can tell if the galaxy is quietly aging, steadily forming stars, or experiencing a starburst. This comparison uses the \emph{birthrate parameter}
+\[
+  b = \frac{\mathrm{SFR}_{\rm current}}{\langle \mathrm{SFR}_{\rm past}\rangle}\!,
+\]
+where $b<1$ indicates a slowdown, $b\approx1$ steady formation, and $b>1$ a recent burst of star formation \cite{brinchmann2004physical}. On cosmic scales, the average SFR density rose to a peak around redshift $z\sim2$ (about 10 billion years ago) and has since declined by an order of magnitude \cite{MadauDickinson2014}.
+
+\subsubsection{How SFR Is Determined}
+Because stars of different masses and ages radiate energy differently, astronomers use several complementary tracers to estimate SFR:
+
+\begin{itemize}
+  \item \textbf{Hydrogen Emission Lines.} Massive young stars emit ultraviolet light that ionizes hydrogen. When the gas recombines, it produces lines like H\,$\alpha$ and H\,$\beta$. After correcting for dust and aperture losses, the H\,$\alpha$ luminosity relates to SFR as \cite{kennicutt1998star}:
+  \[
+    \mathrm{SFR}\,(M_{\odot}\,\mathrm{yr}^{-1})
+    \approx 7.9 \times 10^{-42}\;L(\mathrm{H\alpha})\;(\mathrm{erg\,s}^{-1}).
+  \]
+
+  \item \textbf{Ultraviolet Continuum.} The UV light (e.g.\ at 1500 Å) traces stars formed over the last $\sim$100 Myr. It is calibrated via \cite{KennicuttEvans2012}:
+  \[
+    \mathrm{SFR}\,(M_{\odot}\,\mathrm{yr}^{-1})
+    \approx 1.4 \times 10^{-28}\;L_\nu\;(\mathrm{erg\,s}^{-1}\,\mathrm{Hz}^{-1}),
+  \]
+  though dust extinction can introduce uncertainties.
+
+  \item \textbf{Infrared Emission.} Dust absorbs UV/optical light and re-emits it in the far-infrared. The total IR luminosity compensates for obscured star formation \cite{KennicuttEvans2012}:
+  \[
+    \mathrm{SFR}\,(M_{\odot}\,\mathrm{yr}^{-1})
+    \approx 4.5 \times 10^{-44}\;L_{\rm TIR}\;(\mathrm{erg\,s}^{-1}).
+  \]
+
+  \item \textbf{Hybrid Indicators.} To capture both unobscured and dust-hidden stars, one often combines H\,$\alpha$ (or UV) with mid-infrared (e.g.\ 24 µm):  
+  \[
+    \mathrm{SFR}
+    \approx 7.9\times10^{-42}\,L(\mathrm{H\alpha})_{\rm obs}
+    + 0.031\,L(24\,\mu\mathrm{m}),
+  \]
+  which reduces systematic bias to $\sim30\%$ \cite{calzetti2010calibration}.
+
+  \item \textbf{Radio Continuum.} At $\sim1.4$ GHz, non-thermal synchrotron emission from supernova remnants provides an extinction-free SFR estimate over $\sim$100 Myr:
+  \[
+    \mathrm{SFR}\,(M_{\odot}\,\mathrm{yr}^{-1})
+    \approx 1.0 \times 10^{-28}\;L_\nu(1.4\,\mathrm{GHz})\;(\mathrm{erg\,s}^{-1}\,\mathrm{Hz}^{-1}),
+  \]
+  with uncertainties $\lesssim20\%$ \cite{murphy2011calibrating}.
+\end{itemize}
+
+
+\subsubsection{Why SFR Is a Key Galactic Parameter}  
+The star formation rate (SFR) underpins multiple aspects of galaxy evolution:  
+\begin{itemize}
+  \item \textbf{Stellar Mass Assembly.} The SFR directly measures the conversion rate of cold gas into stars, driving the build-up of stellar mass and shaping the galaxy stellar mass function over cosmic time \cite{KennicuttEvans2012}.
+  \item \textbf{Chemical Enrichment.} High SFRs produce core-collapse supernovae and AGB-star mass loss that return heavy elements (e.g., O, Fe) to the interstellar medium, establishing metallicity gradients and enriching subsequent generations of stars \cite{Prantzos2012}.
+  \item \textbf{Feedback and ISM Regulation.} Radiation pressure, stellar winds, and supernova explosions from young massive stars inject energy and momentum into the ISM, driving turbulence, regulating star formation efficiency, and launching galactic-scale outflows \cite{Rupke2018}.
+  \item \textbf{Star Formation Laws.} Empirical relations such as the Kennicutt–Schmidt law relate gas surface density to SFR surface density, providing fundamental insight into the physical processes controlling star formation on galactic and sub-galactic scales \cite{Kennicutt1998}.
+  \item \textbf{Cosmic Star Formation History.} The evolution of the global SFR density with redshift traces galaxy growth, cosmic chemical evolution, and black hole accretion, marking key epochs such as the peak of star formation around $z\sim2$ and the decline toward the present day \cite{MadauDickinson2014}.
+\end{itemize}
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%
+% Chapter: Data Exploration
+%%%%%%%%%%%%%%%%%%%
+\chapter{Data Exploration}
+\label{ch:data_exploration}
+
+\section{Dataset Overview and Initial Filtering}
+We source our sample from the SDSS Data Release 7 star formation rate (SFR) catalog, which initially contains 4 851 200 objects. To ensure that every galaxy has both imaging and spectroscopic data, we retain only those entries with available multi-band cutouts and 1D spectra, reducing the sample to 151 190 records. Next, we remove entries where the logarithmic SFR indicator \texttt{AVG} is undefined (NaN), leaving 34 613 objects. Finally, we exclude the placeholder value \texttt{AVG} = $-99$, resulting in 30 752 records. Of these, 16 841 have \texttt{FLAG}=0 (high-quality SFR estimates) and 13 911 have \texttt{FLAG}$\neq$0 \cite{SDSS_SFR_DOC,data_exploring}. Table~\ref{tab:record_counts} summarizes these counts.
+
+\begin{table}[H]
+  \centering
+  \caption{Record counts at successive filtering stages.}
+  \label{tab:record_counts}
+  \begin{tabular}{@{}lr@{}}
+    \toprule
+    Filtering step & \# of Objects \\
+    \midrule
+    Initial SDSS SFR catalog              & 4 851 200 \\
+    With image \& spectrum available      & 151 190  \\
+    Removing NaN in \texttt{AVG}          & 34 613   \\
+    Excluding \texttt{AVG} = $-99$        & 30 752   \\
+    \quad (\texttt{FLAG}=0)               & 16 841   \\
+    \quad (\texttt{FLAG}$\neq$0)          & 13 911   \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+
+Table~\ref{tab:record_counts} shows how aggressive filtering reduces the sample to the most reliable SFR measurements for our regression tasks.  
+
+Because we leverage the HiSS-Cube framework—a scalable pipeline for hierarchical semi-sparse cubes that preserves measurement uncertainties and precomputes cutouts—each galaxy in our high-quality subset is accompanied by five image quality levels and five spectral resolutions \cite{nadvornik2021hiss}. Moreover, each of these variants carries the same \texttt{AVG} SFR label, simplifying our supervised learning setup.
+
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{data_explore_photo/avg_distribution.png}
+  \caption{Distribution of \texttt{AVG} (\(\log_{10}\) SFR) in the filtered sample.}
+  \label{fig:avg_distribution}
+\end{figure}
+\noindent
+Figure~\ref{fig:avg_distribution} reveals a roughly log-normal distribution of SFR values, with most galaxies clustered around \(\log_{10}(\mathrm{SFR})\sim-1.5\) to 0.  
+
+\section{SDSS Data Description}
+
+The SDSS dataset provides a unique opportunity to study the properties of astronomical objects using comprehensive observations. Each object in the sample is characterized by the following components:
+\begin{itemize}
+    \item \textbf{Five-Band Photometry.} For each object, five images are available corresponding to different spectral bands (denoted as \(u\), \(g\), \(r\), \(i\), and \(z\)) \cite{fukugita1996sloan}. Each image captures a specific portion of the spectrum, enabling a detailed analysis of the structural and physical properties of the objects.
+    \item \textbf{Spectroscopic Data.} In addition to the photometric images, each object is provided with a spectrum that offers information on its chemical composition, temperature, and dynamics.
+\end{itemize}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\textwidth]{data/data.png}
+    \caption{An example of an object. Top 5 pixel photos, bottom a spectrum.}
+    \label{fig:prism}
+\end{figure}
+
+\section{Image and Spectrum Data Availability}  
+Thanks to the HiSS-Cube pipeline \cite{nadvornik2021hiss}, each high-quality galaxy (\texttt{FLAG}=0) is preprocessed into a multi-resolution “cube” that preserves uncertainties. For our regression experiments, we retrieve five image resolutions and five spectral samplings per object (see Fig.~\ref{fig:hisscube_gallery}).
+
+
+
+\begin{itemize}
+  \item \textbf{Image cutouts.} Five spatial resolutions with shape $(N,5,H,W)$, where $H=W\in\{64,32,16,8,4\}$ pixels.  
+    These correspond to successive downsamplings of the original 64×64 cutout, allowing us to study the impact of morphological detail on SFR prediction.
+    % *** FIX: placeholder gallery of five image resolutions ***
+\begin{figure}[H]
+  \centering
+  % Top row: example galaxy at 64×64, 32×32, 16×16, 8×8, 4×4 px
+  \includegraphics[width=\textwidth]{data_explore_photo/4photo.png}
+  \caption{HiSS-Cube image outputs for a single galaxy at five resolution levels (64×64 to 4×4 pixels).}
+  \label{fig:hisscube_images}
+\end{figure}
+  \item \textbf{Spectral vectors.} Five one-dimensional samplings with length 
+  $L\in\{4620,2310,1155,577,289\}$ bins,  
+    obtained by uniform downsampling of the native SDSS spectrum. Lower-resolution spectra effectively smooth high-frequency noise, serving as a built-in denoiser.
+\end{itemize}
+
+% *** FIX: placeholder gallery of five spectral samplings ***
+\begin{figure}[H]
+  \centering
+  % Bottom row: the same galaxy’s spectrum at 4620, 2310, 1155, 577, and 289 bins
+  \includegraphics[width=\textwidth]{data_explore_photo/4spectra.png}
+  \caption{HiSS-Cube spectral outputs for the same galaxy at five sampling levels (4620 to 289 bins).}
+  \label{fig:hisscube_spectra}
+\end{figure}
+
+By having these five distinct quality levels for both images and spectra, we can systematically evaluate how resolution and smoothing affect model performance and computational cost.
+
+
+\section{SFR Estimation Quality: \texttt{FLAG} Keyword}
+According to the SDSS documentation:
+
+\begin{displayquote}
+"The FLAG keyword indicates the status of the SFR estimation. If FLAG=0 then all is well and for statistical studies in particular, it is recommendable to focus on these objects as in all other cases the detailed method to estimate SFR or SFR/M* will be (slightly) different and can introduce subtle biases." \cite{SDSS_SFR_DOC}
+\end{displayquote}
+
+We proceed exclusively with the \texttt{FLAG}=0 subset (16 841 galaxies).
+
+\section{Analysis of NaN Block Lengths and Positions}
+\subsection{NaN Percentage by Object}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{data_explore_photo/nan_percentage.png}
+    \caption{Percentage of records by NaN percentage categories at Zoom level 0, comparing all data vs.\ \texttt{FLAG}=0 subset.}
+    \label{fig:nan_percentage}
+\end{figure}
+\noindent
+Figure~\ref{fig:nan_percentage} shows that over 65\% of spectra contain no NaNs, and only about 2\% have 1–5\% missing values, indicating that most high-quality galaxies have nearly complete spectra.
+
+
+\subsection{NaN Block Statistics}
+Before examining spatial patterns, we quantify runs of consecutive NaNs in each spectrum. Table~\ref{tab:nan_blocks} reports the total number of NaN blocks, their mean lengths, and maximum lengths at each zoom level.
+
+\begin{table}[H]
+  \centering
+  \caption{NaN block statistics for \texttt{FLAG}=0 at each zoom level.}
+  \label{tab:nan_blocks}
+  \begin{tabular}{@{}lrrr@{}}
+    \toprule
+    Zoom level & \# NaN blocks & Mean length & Max length \\
+    \midrule
+    0 & 12 207 & 34.69 & 4 620 \\
+    1 & 12 045 & 18.11 & 2 310 \\
+    2 & 11 954 &  9.68 & 1 155 \\
+    3 & 11 875 &  5.46 &   577 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+This table indicates that while the total number of NaN segments is similar across resolutions, the average and maximum block lengths decrease at lower spectral sampling due to downsampling “compressing” gaps.
+
+
+\subsection{Distribution of NaN Run Lengths}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{data_explore_photo/nan_block_lengths.png}
+    \caption{Distribution of consecutive NaN run lengths at each resolution for \texttt{FLAG}=0.}
+    \label{fig:nan_block_lengths}
+\end{figure}
+\noindent
+ In Fig.~\ref{fig:nan_block_lengths}, most NaN runs are very short (1–3 bins), with only a few extending beyond 10 bins. This suggests that missing data are typically localized “spikes” rather than large spectral gaps.
+
+
+\subsection{NaN Occurrence Along Wavelength}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{data_explore_photo/nan_positions.png}
+    \caption{Typical wavelength regions where NaN gaps commonly occur (Zoom level 0).}
+    \label{fig:nan_positions}
+\end{figure}
+\noindent
+Figure~\ref{fig:nan_positions} shows peaks in NaN frequency around 5500 Å and near the red end (9000 Å), corresponding to spectrograph join regions and low-sensitivity wavelengths.  
+
+Each point along the wavelength axis represents the fraction of spectra in which that specific bin is flagged as NaN; notably, there is no wavelength where 0\% of spectra are missing data, indicating that every channel is affected by occasional dropouts or quality flags. The sharp spike at $\sim5500\,$Å coincides with the dichroic split between the blue and red arms of the SDSS spectrograph, where stitching mismatches and calibration uncertainties often lead to flagged pixels \cite{Gunn2006}. The elevated NaN occurrence near $\sim9000\,$Å arises from the declining quantum efficiency of the red CCDs and strong telluric emission lines (e.g.\ atmospheric OH), which reduce the signal‐to‐noise ratio and trigger data quality filters \cite{Smee2013}.
+
+\begin{figure}[H]
+  \centering
+  \begin{subfigure}[b]{0.9\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{data_explore_photo/nan_exp_1.png}
+    \caption{Spectrum #357 from SDSS showing regions of missing values (NaN). Red vertical dashed lines indicate the wavelength ranges (around 7400 Å and 8000 Å) where data are absent.}
+    \label{fig:spec125}
+  \end{subfigure}
+  \vspace{1em}
+
+  \begin{subfigure}[b]{0.9\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{data_explore_photo/nan_exp_2.png}
+    \caption{Spectrum #380 from SDSS with regions of missing data (NaN) highlighted. Red vertical dashed lines mark the wavelengths—around 5600 Å, 6000 Å, 8850 Å, 9050 Å, and 9200 Å—where flux values are absent.}
+    \label{fig:spec328}
+  \end{subfigure}
+
+  \caption{Examples of SDSS spectra containing NaN segments. In each panel, the red overlay marks the wavelength region flagged as NaN.}
+  \label{fig:example_nans}
+\end{figure}
+
+
+
+\section{Detection and Removal of Multi‑Object Cutouts}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{data_explore_photo/multi_object_example.png}
+    \caption{Example of a cutout containing multiple detected sources, excluded from the final sample \cite{data_exploring} .}
+    \label{fig:multi_object_example}
+\end{figure}
+\noindent In order to detect and remove cutouts containing multiple objects, we implement a simple image‐processing pipeline inspired by standard thresholding and connected‐component labeling techniques. First, pixel values are normalized to the [0,1] range. We then binarize the central filter image (usually the $r$‐band) at a fixed global threshold of 0.9—this value was chosen heuristically to separate background sky from source signal, following best practices in image thresholding \cite{sezgin2004survey}. Next, we apply the connected‐component labeling algorithm (`ndimage.label`) to the binary image to count discrete regions. If more than one connected region is found, the index is flagged as a “multi‐object” cutout. Finally, a small subset of these multi‐object indices is visualized to confirm the detection. Our implementation is provided in Listing \cite{data_exploring} and closely follows the methodology of Sezgin and Sankur’s survey on thresholding techniques \cite{sezgin2004survey} as well as the standard workflow described in Gonzalez and Woods’s digital image processing text \cite{GonzalezWoods2008}.
+
+
+\section{Summary of Final Dataset}
+The cleaned dataset for supervised regression consists of:
+\begin{itemize}
+  \item Multi‑band image cutouts at four resolutions
+  \item One‑dimensional spectra at four samplings
+  \item Robust SFR labels (\texttt{AVG}, \texttt{FLAG}=0)
+  \item Total of 11,179 galaxies
+\end{itemize}
+
+\subsection{Exploratory Embedding Analysis with t-SNE, UMAP, and PCA}
+To gain intuition about the structure of our image and spectral datasets in relation to the target variable \texttt{AVG}, we applied three popular dimensionality‐reduction methods:
+
+\begin{itemize}
+  \item \textbf{t-SNE} \cite{maaten2008visualizing} — a nonlinear technique that preserves local structure by minimizing the Kullback–Leibler divergence between probability distributions of pointwise neighborhoods in high- and low-dimensional spaces.
+  \item \textbf{UMAP} \cite{mcinnes2018umap} — a topological manifold learning algorithm that constructs a fuzzy simplicial complex in high dimensions and optimizes its low-dimensional embedding to preserve both local and global data structure.
+  \item \textbf{PCA} \cite{jolliffe2002principal} — a linear method that identifies orthogonal directions (principal components) of maximum variance in the data and projects the data onto the leading components for dimensionality reduction.
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{data_explore_photo/reduction.png}
+  \caption{Embeddings of image and spectral data at four zoom levels (Z0–Z3) using t-SNE, UMAP, and PCA, colored by \texttt{AVG} \cite{combined}.}
+  \label{fig:embeddings_all}
+\end{figure}
+
+\noindent Here, $\rho_x$ and $\rho_y$ are the Pearson correlation coefficients between the first (x) and second (y) embedding dimensions and the target variable $\texttt{AVG}$ (log$_{10}$ SFR). We computed these correlations over the full sample to assess how linearly each low-dimensional axis relates to the true SFR values \cite{Hastie2009}. 
+
+The Pearson correlations between embedding axes and \texttt{AVG} are:
+
+\begin{center}
+\begin{tabular}{lrr|lrr}
+\toprule
+\textbf{Method / Modality}     & $\rho_x$ & $\rho_y$  & \textbf{Method / Modality}     & $\rho_x$ & $\rho_y$ \\
+\midrule
+t-SNE Image Z0 & -0.03 & -0.04 & t-SNE Spectra Z0 & -0.10 & +0.06 \\
+t-SNE Image Z1 & -0.03 & -0.06 & t-SNE Spectra Z1 & -0.15 & +0.02 \\
+t-SNE Image Z2 &  0.00 & -0.09 & t-SNE Spectra Z2 & -0.16 & +0.00 \\
+t-SNE Image Z3 & -0.06 & -0.03 & t-SNE Spectra Z3 & -0.15 & -0.02 \\
+\midrule
+UMAP Image Z0 & +0.03 & +0.00 & UMAP Spectra Z0 & +0.02 & -0.02 \\
+UMAP Image Z1 & +0.03 & +0.03 & UMAP Spectra Z1 & -0.03 & +0.00 \\
+UMAP Image Z2 & -0.05 & -0.01 & UMAP Spectra Z2 & -0.02 & -0.01 \\
+UMAP Image Z3 & +0.08 & -0.02 & UMAP Spectra Z3 & -0.02 & +0.02 \\
+\midrule
+PCA Image Z0  & -0.03 & +0.01 & PCA Spectra Z0  & -0.11 & +0.05 \\
+PCA Image Z1  & -0.05 & -0.01 & PCA Spectra Z1  & -0.14 & +0.03 \\
+PCA Image Z2  & -0.07 & -0.04 & PCA Spectra Z2  & -0.14 & +0.01 \\
+PCA Image Z3  & -0.07 & +0.03 & PCA Spectra Z3  & -0.14 & -0.01 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent The embedding analysis reveals:
+\begin{itemize}
+  \item \textbf{t-SNE} and \textbf{UMAP} uncover local, nonlinear structure but show weak linear correlation with \texttt{AVG}, indicating complex manifold relationships \cite{maaten2008visualizing,mcinnes2018umap}.
+  \item \textbf{PCA} yields stronger linear gradients in the first component—especially for spectra—suggesting that principal components capture a significant fraction of SFR variance in a linear subspace \cite{jolliffe2002principal}.
+\end{itemize}
+
+In summary, t-SNE and UMAP highlight nonlinear patterns, while PCA emphasizes linear trends. Combining insights from all three methods guides our feature‐engineering and model‐selection strategies.
+
+
+%% Chapter: Multimodal Machine Learning
+\chapter{Multimodal Machine Learning}
+\label{ch:multimodal_ml}
+
+\section{Introduction to Multimodal Machine Learning}
+Multimodal machine learning seeks to integrate and jointly reason over heterogeneous data sources—such as images, text, audio, and structured signals—to build models that capture complementary information and achieve higher performance than any single modality alone \cite{Baltrusaitis2018}.
+
+In recent years, the commercial success of large language models (LLMs) has demonstrated the power of combining multiple modalities: modern systems fuse text, vision, and speech inputs to drive applications in customer service, content creation, and scientific research. For example, vision-language models enable image editing via natural-language prompts, while speech-enabled assistants interpret spoken commands in context. These successes underscore the growing importance of multimodal approaches across industries and research domains.
+
+In this thesis, we apply multimodal learning to the astrophysical problem of predicting galaxy star formation rates (SFRs) from Sloan Digital Sky Survey (SDSS) data. The SFR regression task naturally lends itself to multimodal modeling because photometric images encode morphological structure and color information, while spectroscopic measurements trace detailed physical diagnostics such as emission-line luminosities.
+
+\section{Fusion Strategies in Multimodal Learning}
+A key design choice in multimodal systems is how and when to combine information from different modalities. Two canonical approaches are:
+
+\begin{description}
+\item[Early Fusion] Feature-level fusion where modality-specific features are extracted independently and then concatenated (or otherwise merged) into a joint embedding, which is passed to a single model for prediction. Early fusion enables cross-modal feature interactions from the very beginning of the learning process. \cite{Illustra28:online}
+
+\item[Late Fusion] Decision-level fusion where each modality is processed by its own model, producing independent predictions, which are then combined (e.g., averaged or weighted) to yield the final output. Late fusion simplifies model training by decoupling modality-specific learners and often improves robustness by enforcing model diversity. \cite{Illustra28:online}
+\end{description}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.8\textwidth]{ml_photos/fusions.png}
+  \caption{Illustration of Late and Early Fusion strategies in multimodal learning \cite{Illustra28:online}.}
+  \label{fig:fusion_strategies}
+\end{figure}
+
+\subsection{Suitability of SFR Prediction as a Regression Task}
+Predicting the star formation rate (SFR) is inherently a continuous regression problem rather than a classification task. The target variable, typically expressed as $\log_{10}(\mathrm{SFR},/,M_\odot,\mathrm{yr}^{-1})$, varies smoothly across galaxies of different morphologies and physical conditions. Multimodal fusion allows us to exploit both morphological cues from images and physical diagnostics from spectra to minimize prediction error in this continuous space.
+
+\section{Scene Dataset Example}
+To illustrate the general benefits of multimodal learning, we conducted preliminary experiments on the publicly available Scene dataset \cite{SceneCla95:online}, which provides two modalities for environmental scene classification:
+\begin{itemize}
+\item \textbf{Images:} Still frames depicting eight scene types (e.g., beach, classroom, forest).
+\item \textbf{Audio Features:} Mel-Frequency Cepstral Coefficients (MFCCs) extracted from audio recordings synchronized with each image.
+\end{itemize}
+
+The dataset supports two hierarchical classification tasks:
+\begin{itemize}
+\item \textbf{CLASS1:} Binary classification of scenes as indoors vs.\ outdoors.
+\item \textbf{CLASS2:} Fine-grained classification into eight specific scene categories.
+\end{itemize}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{data/class.png}
+\caption{CLASS1 (left) and CLASS2 (right) label distributions for the Scene dataset.}
+\label{fig:scene_pie_example}
+\end{figure}
+
+Although both modalities individually yield high classification accuracy (>99\%), multimodal fusion (early or late) further reduces error rates in borderline cases where one modality alone is ambiguous (e.g., a image of a crowded indoor sports arena with noisy audio). These results confirm that even in high‑signal regimes, fusion can enhance model robustness and confidence.
+
+% Bibliography entries for this chapter
+% \bibliography{references}
+
+%% Chapter: Regression Modeling for Star Formation Rate Prediction
+%%%%%%%%%%%%%%%%%%%
+% Chapter: Machine Learning Methodology
+%%%%%%%%%%%%%%%%%%%
+\chapter{Machine Learning Methodology}
+\label{ch:ml_methods}
+
+\section{Star–Galaxy–Quasar classification}
+
+Unfortunately, attempting a star–galaxy–quasar classification on this dataset proves problematic due to a severe class imbalance. The sample contains roughly ten times more galaxies than quasars, while stars number fewer than 30 instances, making any supervised classifier highly biased toward the majority class. This imbalance stems from the fact that the dataset was originally curated for SFR prediction, not object‐type classification.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.7\textwidth]{data_explore_photo/classes.png}
+  \caption{Class distribution for star–galaxy–quasar labels: galaxies outnumber quasars by a factor of 10, and stars comprise fewer than 30 objects \cite{data_exploring}.}
+  \label{fig:class_distribution}
+\end{figure}
+
+\section{Overview of Learning Algorithms}
+To predict the logarithmic star‐formation rate (\texttt{AVG} in $[-4,4]$) we employ three baseline models:
+\begin{itemize}
+  \item \textbf{Decision Tree Regression (DT).} A non‐parametric tree model that recursively partitions feature space by axis‐aligned splits, offering interpretability and a natural baseline \cite{Hastie2009}.
+  \item \textbf{Convolutional Neural Network (VGGNet12).} A 12‐layer CNN architecture that excels at large‐scale image feature extraction \cite{SimonyanZisserman2014}.
+  \item \textbf{Gradient Boosting Machine (LightGBM).} An efficient implementation of gradient‐boosted decision trees optimized for speed and memory \cite{Ke2017}.
+\end{itemize}
+
+\section{Experimental Setup}
+
+\subsection{Data Splitting Strategy}
+We shuffle and split the cleaned sample into training, validation, and test subsets in a 60/20/20 ratio using stratified sampling on \texttt{AVG}. We then perform 5‐fold cross‐validation on the training set to estimate generalization error and tune hyperparameters \cite{Kohavi1995,Pedregosa2011}.
+
+\subsection{Preprocessing}
+\begin{itemize}
+  \item \textit{Images:} pixel values are linearly scaled to $[0,1]$ by dividing by 255 \cite{krizhevsky2012imagenet}, then flattened for decision‐tree/LightGBM models or fed as 2D arrays into VGGNet12 \cite{pedregosa2011scikit}.
+  \item \textit{Spectra:} Any object with NaN flux values removed, yielding 11,179 gap‐free spectra\cite{ivezic2020statistics}.
+  \item \textit{Early Fusion:} Concatenate image and spectral vectors into one feature vector \cite{dietterich2000ensemble}.
+  \item \textit{Late Fusion:} Average photo‐only and spec‐only model predictions\cite{dietterich2000ensemble}.
+\end{itemize}
+
+\subsection{Overfitting and Regularization Strategies}
+When training flexible models on relatively small astronomical datasets, overfitting can be a serious concern. We employed three complementary techniques to control model complexity and improve generalization:
+
+\begin{description}
+  \item[Max.\ Depth (Decision Trees \& LightGBM)]  
+    Limiting the maximum depth of each tree constrains the number of hierarchical splits, preventing the model from fitting spurious noise in the training set. Shallow trees capture only the strongest global trends, while deeper trees can carve out fine‐scale fluctuations that often do not generalize. We tuned \texttt{max\_depth} via grid search within a pre‐defined range, selecting the value that maximized cross‐validated $R^2$ on held‐out folds \cite{Hastie2009}.
+
+  \item[Early Stopping (LightGBM \& VGGNet12)]  
+    By monitoring validation loss after each boosting iteration (for LightGBM) or epoch (for VGGNet12), we halted training as soon as performance ceased to improve for a fixed “patience” window. This prevents the learner from continuing to fit noise once the true signal plateau has been reached, effectively regularizing the model without manual intervention \cite{Prechelt2002early}\cite{Smith2017}.
+
+  \item[Dropout (VGGNet12)]  
+    During CNN training, we randomly deactivate a fraction of hidden units (here, 50\%) on each forward pass. This forces the network to distribute its representational power across many redundant sub-networks, reducing co‐adaptation of neurons and dramatically lowering overfitting risk \cite{srivastava2014dropout}. At test time, all neurons are active and their outputs are rescaled to account for the training‐time dropout.
+
+  \item[Grid Search]  
+    For each model we performed exhaustive grid searches over key hyperparameters (e.g.\ \texttt{max\_depth}, \texttt{learning\_rate}, dropout rate) using 5‐fold cross‐validation. Systematic tuning ensures we identify the optimal bias–variance trade‐off, rather than relying on ad-hoc or manually chosen settings. Proper hyperparameter selection is crucial because under-regularized models overfit and under-fitted models underutilize the available signal.
+\end{description}
+
+\subsection{Hyperparameter Tuning}
+\textbf{DT:} grid search over $\texttt{max\_depth}\in\{1,\dots,6\}$ with 5‐fold CV, selecting the depth maximizing mean test $R^2$ \cite{Hastie2009}.  
+
+\textbf{VGGNet12:} sweep over learning rate (\texttt{lr}) and fixed dropout=0.5, early stopping patience=30 \cite{Smith2017,Prechelt1998}.  
+
+\textbf{LightGBM:} grid over \texttt{learning\_rate} and \texttt{max\_depth}, early stopping round=10 \cite{Friedman2001}.
+
+\section{Evaluation Metrics}
+We evaluate all models using:
+\begin{itemize}
+  \item \textit{Coefficient of Determination ($R^2$).} Variance explained \cite{Hastie2009}.\\
+  \[
+    R^2 \;=\; 1 \;-\; \frac{\sum_{i=1}^N (y_i - \hat y_i)^2}{\sum_{i=1}^N (y_i - \bar y)^2}.
+  \]
+  \item \textit{Mean Absolute Error (MAE).} Average absolute deviation \cite{Hastie2009}.\\
+  \[
+    \mathrm{MAE} \;=\; \frac{1}{N} \sum_{i=1}^N \bigl|y_i - \hat y_i\bigr|.
+  \]
+  \item \textit{Root Mean Square Error (RMSE).} Quadratic penalty on large errors \cite{Hastie2009}.\\
+  \[
+    \mathrm{RMSE} \;=\; \sqrt{\frac{1}{N} \sum_{i=1}^N (y_i - \hat y_i)^2}.
+  \]
+  \item \textit{Normalized Median Absolute Deviation (NMAD).} $1.4826\times\mathrm{median}(|\epsilon-\mathrm{median}(\epsilon)|)$ \cite{Rousseeuw1993}.\\
+  \[
+    \mathrm{NMAD} \;=\; 1.4826 \;\times\; \mathrm{median}\!\bigl(\,\lvert \epsilon_i - \mathrm{median}(\epsilon)\rvert\bigr),
+    \quad \epsilon_i = y_i - \hat y_i.
+  \]
+\end{itemize}
+
+\section{Decision Tree Regression}
+We fit DT regressors of depth $1$--$6$ to photo, spectra, and early‐fused data, then average image and spectra for late fusion.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{ml_photos/dt_photo_metrics.png}
+  \caption{DT on photographs: $R^2$, MAE, RMSE, and NMAD vs.\ max.\ tree depth. Best $d=4$ (all except NMAD).}
+  \label{fig:dt_photo_metrics}
+\end{figure}
+\noindent\textbf{Figure 1:} Photo‐only DT performance.\\
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{ml_photos/dt_spectra_metrics.png}
+  \caption{DT on spectra: $R^2$, MAE, RMSE, and NMAD vs.\ max.\ tree depth. Best $d=2$.}
+  \label{fig:dt_spectra_metrics}
+\end{figure}
+\noindent\textbf{Figure 2:} Spectra‐only DT performance.\\
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{ml_photos/dt_early_metrics.png}
+  \caption{DT early fusion: $R^2$, MAE, RMSE, and NMAD vs.\ tree depth. Best $d=3$ by $R^2$.}
+  \label{fig:dt_early_metrics}
+\end{figure}
+\noindent\textbf{Figure 3:} Early fusion DT performance.\\
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{ml_photos/dt_results.png}
+  \caption{DT: metric comparison across modalities (photo, spectra, early, late).}
+  \label{fig:dt_results}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{ml_photos/dt_runtime.png}
+  \caption{DT: wall‐clock runtime across modalities.}
+  \label{fig:dt_runtime}
+\end{figure}
+
+\section{Convolutional Neural Network: VGGNet12}
+The VGGNet12 model stacks $3\times3$ convolutions, max‐pooling, then three FC layers with dropout, fine‐tuned from ImageNet \cite{SimonyanZisserman2014}.
+
+\subsection{Architecture and Training Protocol}
+We optimize custom MSE loss,
+\[
+  \mathcal{L}_{\rm MSE} = \frac1N\sum_{i=1}^N (\hat y_i - y_i)^2,
+\]
+using Adam, early stopping (patience=30), and focus hyperparameter tuning on learning rate \cite{Goodfellow2016,Prechelt1998,Smith2017}.
+
+\subsection{Training Curves: Photographs}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{ml_photos/vgg_photo_loss.png}
+  \caption{VGGNet12 photo: training (blue) vs.\ validation (orange) loss per epoch; red dashed line marks lowest val.\ loss.}
+  \label{fig:vgg_photo_loss}
+\end{figure}
+\noindent\textbf{Best params (photo):} \{ \texttt{lr}: \verb|1e-05|, \texttt{dropout}: 0.5 \}\\
+
+\subsection{Hyperparameter Sweep: Photographs}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{ml_photos/vgg_photo_metrics_lr.png}
+  \caption{VGGNet12 photo: $R^2$, MAE, RMSE, NMAD vs.\ learning rate.}
+  \label{fig:vgg_photo_metrics}
+\end{figure}
+\noindent\textbf{Best params (photo):} \{ \texttt{lr}: \verb|3e-06|, \texttt{dropout}: 0.5 \}\\
+
+\subsection{Training Curves: Spectra}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{ml_photos/vgg_spec_loss.png}
+  \caption{VGGNet12 spectra: training vs.\ validation loss per epoch; red dashed line = best epoch.}
+  \label{fig:vgg_spec_loss}
+\end{figure}
+\noindent\textbf{Best params (spectra):} \{ \texttt{lr}: \verb|3e-06|, \texttt{dropout}: 0.5 \}\\
+
+\noindent On this graph, it is particularly noticeable that there are epochs where the validation loss dips below the training loss. This behavior is expected in networks using dropout: during training dropout with $p=0.5$ randomly deactivates neurons, adding noise and raising training loss, whereas no dropout is applied during validation, so the validation loss can occasionally be lower than the training loss \cite{srivastava2014dropout}.
+
+
+\subsection{Hyperparameter Sweep: Spectra}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{ml_photos/vgg_spec_metrics_lr.png}
+  \caption{VGGNet12 spectra: $R^2$, MAE, RMSE, NMAD vs.\ learning rate.}
+  \label{fig:vgg_spec_metrics}
+\end{figure}
+\noindent\textbf{Best params (spectra):} \{ \texttt{lr}: \verb|3e-06|, \texttt{dropout}: 0.5 \}\\
+
+\subsection{Training Curves: Early Fusion}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{ml_photos/vgg_early_loss.png}
+  \caption{VGGNet12 early fusion: training vs.\ validation loss; red dashed line = best epoch.}
+  \label{fig:vgg_early_loss}
+\end{figure}
+\noindent\textbf{Best params (early fusion):} \{ \texttt{lr}: \verb|1e-05|, \texttt{dropout}: 0.5 \}\\
+
+\subsection{Hyperparameter Sweep: Early Fusion}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{ml_photos/vgg_early_metrics_lr.png}
+  \caption{VGGNet12 early fusion: $R^2$, MAE, RMSE, NMAD vs.\ learning rate.}
+  \label{fig:vgg_early_metrics}
+\end{figure}
+\noindent\textbf{Best params (early fusion):} \{ \texttt{lr}: \verb|1e-05|, \texttt{dropout}: 0.5 \}\\
+
+\subsection{Overall Metrics and Runtime}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{ml_photos/vgg_results.png}
+  \caption{VGGNet12: metric comparison across modalities.}
+  \label{fig:vgg_results}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{ml_photos/vgg_runtime.png}
+  \caption{VGGNet12: wall‐clock runtime across modalities.}
+  \label{fig:vgg_runtime}
+\end{figure}
+
+\section{Gradient Boosting Machine: LightGBM}
+LightGBM grows trees leaf‐wise with histogram‐based splitting and optimizes RMSE with early stopping (10 rounds) \cite{Ke2017,Friedman2001}.
+
+\subsection{Architecture and Training Protocol}
+We minimize RMSE:
+\[
+  \mathrm{RMSE} = \sqrt{\frac1N\sum_{i=1}^N(\hat y_i - y_i)^2},
+\]
+and tune \texttt{learning\_rate} and \texttt{max\_depth}; early stopping prevents overfitting \cite{prechelt2002early}.
+
+\subsection{Training Curves: Photographs}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{ml_photos/lgb_photo_loss.png}
+  \caption{LightGBM photo: training vs.\ validation RMSE per iteration; red dashed line = best iteration.}
+  \label{fig:lgb_photo_loss}
+\end{figure}
+\noindent\textbf{Best params (photo):} \{ \texttt{learning\_rate}: 0.1, \texttt{max\_depth}: 8 \}\\
+
+\subsection{Hyperparameter Sweep: Photographs}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{ml_photos/lgb_photo_metrics.png}
+  \caption{LightGBM photo: $R^2$, MAE, RMSE, NMAD vs.\ learning rate \& max\_depth.}
+  \label{fig:lgb_photo_metrics}
+\end{figure}
+\noindent\textbf{Best params (photo):} \{ \texttt{learning\_rate}: 0.1, \texttt{max\_depth}: 8 \}\\
+
+\subsection{Training Curves: Spectra}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{ml_photos/lgb_spec_loss.png}
+  \caption{LightGBM spectra: training vs.\ validation RMSE; red dashed line = best iteration.}
+  \label{fig:lgb_spec_loss}
+\end{figure}
+\noindent\textbf{Best params (spectra):} \{ \texttt{learning\_rate}: 0.03, \texttt{max\_depth}: 7 \}\\
+
+\subsection{Hyperparameter Sweep: Spectra}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{ml_photos/lgb_spec_metrics.png}
+  \caption{LightGBM spectra: $R^2$, MAE, RMSE, NMAD vs.\ learning rate \& max\_depth.}
+  \label{fig:lgb_spec_metrics}
+\end{figure}
+\noindent\textbf{Best params (spectra):} \{ \texttt{learning\_rate}: 0.03, \texttt{max\_depth}: 7 \}\\
+
+\subsection{Training Curves: Early Fusion}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{ml_photos/lgb_early_loss.png}
+  \caption{LightGBM early fusion: training vs.\ validation RMSE; red dashed line = best iteration.}
+  \label{fig:lgb_early_loss}
+\end{figure}
+\noindent\textbf{Best params (early fusion):} \{ \texttt{learning\_rate}: 0.1, \texttt{max\_depth}: 9 \}\\
+
+\subsection{Hyperparameter Sweep: Early Fusion}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{ml_photos/lgb_early_metrics.png}
+  \caption{LightGBM early fusion: $R^2$, MAE, RMSE, NMAD vs.\ learning rate \& max\_depth.}
+  \label{fig:lgb_early_metrics}
+\end{figure}
+\noindent\textbf{Best params (early fusion):} \{ \texttt{learning\_rate}: 0.1, \texttt{max\_depth}: 9 \}\\
+
+\subsection{Overall Metrics and Runtime}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{ml_photos/lgb_results.png}
+  \caption{LightGBM: metric comparison across modalities.}
+  \label{fig:lgb_results}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{ml_photos/lgb_runtime.png}
+  \caption{LightGBM: wall‐clock runtime across modalities.}
+  \label{fig:lgb_runtime}
+\end{figure}
+
+\section{Impact of Image and Spectra Quality on Model Performance}
+To understand how input quality affects our models, we trained each algorithm separately on all four photo‐quality and four spectra‐quality variants using Decision Trees, VGGNet12, and LightGBM. Figures~\ref{fig:photo_quality_dt}, \ref{fig:photo_quality_vgg} and \ref{fig:photo_quality_lgbm} summarize the image results, and Figures~\ref{fig:spec_quality_dt}, \ref{fig:spec_quality_vgg} and \ref{fig:spec_quality_lgbm} the spectra results.
+
+For \textbf{photographs}, all metrics improve monotonically with image quality: higher resolution yields higher $R^2$ and lower MAE, RMSE, and NMAD, at the cost of longer training time.  
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{qual_metrics/dt_p.png}
+  \caption{Decision Tree performance vs.\ image quality (q0–q3) \cite{DTq}.}
+  \label{fig:photo_quality_dt}
+\end{figure}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{qual_metrics/vgg_p.png}
+  \caption{VGGNet12 performance vs.\ image quality (q0–q3) \cite{VGGq}.}
+  \label{fig:photo_quality_vgg}
+\end{figure}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{qual_metrics/lgbm_p.png}
+  \caption{LightGBM performance vs.\ image quality (q0–q3) \cite{lgbmq}.}
+  \label{fig:photo_quality_lgbm}
+\end{figure}
+For \textbf{spectra}, the trend is inverted: the lowest‐resolution spectra produce the best regression accuracy. We attribute this to the smoothing effect of down‐sampling, which attenuates high‐frequency noise and acts like a built‐in Savitzky–Golay filter, improving generalization \cite{SavitzkyGolay1964}. 
+Moreover, the lower‐resolution spectra are inherently smoother—having fewer high‐frequency jumps and outliers—which can act like an implicit regularizer and lead to more stable feature representations; this reduced “jitter” in the inputs often helps machine-learning models learn more robust mappings and thus improves overall prediction accuracy. Lower‐quality variants also run faster.  
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{qual_metrics/dt_s.png}
+  \caption{Decision Tree performance vs.\ spectra quality (q0–q3) \cite{DTq}.}
+  \label{fig:spec_quality_dt}
+\end{figure}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{qual_metrics/vgg_s.png}
+  \caption{VGGNet12 performance vs.\ spectra quality (q0–q3) \cite{VGGq}.}
+  \label{fig:spec_quality_vgg}
+\end{figure}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{qual_metrics/lgbm_s.png}
+  \caption{LightGBM performance vs.\ spectra quality (q0–q3) \cite{lgbmq}.}
+  \label{fig:spec_quality_lgbm}
+\end{figure}
+
+Based on these insights, we re‐ran our final multimodal experiments using the highest image quality with the lowest spectra quality for each model. On the test set, the early‐fusion $R^2$ changed from 
+\[
+(\text{DT}:0.140,\;\text{VGG}:0.248,\;\text{LGBM}:0.308)\quad\rightarrow\quad
+(\text{DT}:0.155,\;\text{VGG}:0.262,\;\text{LGBM}:0.308),
+\]
+and late‐fusion from 
+\[
+(\text{DT}:0.142,\;\text{VGG}:0.251,\;\text{LGBM}:0.237)\quad\rightarrow\quad
+(\text{DT}:0.160,\;\text{VGG}:0.262,\;\text{LGBM}:0.237).
+\]
+These small but consistent gains confirm that moderate smoothing of spectral inputs can enhance multimodal performance.
+
+\chapter{Discussion}
+\label{ch:discussion}
+
+In this work we set out to quantify how different data modalities and their qualities contribute to the precision of SFR prediction in SDSS galaxies. Our experiments demonstrated several key insights:
+
+\begin{itemize}
+  \item \textbf{Modality complementarity.} Spectra‐only models capture instantaneous tracers of star formation (e.g.\ H-$\alpha$ luminosity), while image‐only models extract morphological and colour features indicative of stellar populations and dust attenuation. Neither modality alone reaches the performance of a fused model, confirming that photometry and spectroscopy encode complementary astrophysical information.
+  \item \textbf{Fusion strategy matters.} Early fusion—concatenating image and spectral features before regression—outperformed late fusion (averaging separate predictions). By jointly learning cross-modal correlations, early fusion LightGBM attained the highest $R^2$ and lowest errors, whereas late fusion was more robust but less accurate.
+  \item \textbf{Model architecture trade-offs.} Tree-based learners (LightGBM) excelled at multimodal integration, benefiting from explicit feature interactions and built-in regularization via max depth and early stopping. CNNs (VGGNet12) delivered strong image‐only results but struggled to fully exploit spectral inputs when fused at the feature level, likely due to architectural biases toward spatial hierarchies.
+  \item \textbf{Resolution and smoothing effects.} Higher image resolution consistently improved all metrics, at the cost of longer training times. Conversely, lower‐resolution spectra—by smoothing high-frequency noise—yielded better generalization than native‐resolution inputs. This “implicit denoising” suggests that judicious downsampling can act as a regularizer for spectral features.
+  \item \textbf{Overfitting control.} Regularization techniques (max depth, early stopping, dropout) were critical to prevent overfitting, especially for deep learners on limited data. Systematic grid search allowed us to find an optimal bias–variance balance for each model and modality.
+\end{itemize}
+
+Together, these findings illustrate the power and pitfalls of multimodal regression in astrophysics. While fusion unlocks new predictive gains, careful attention must be paid to modality preprocessing, model choice, and regularization to fully realize its benefits.
+
+\section{Summary and future works}
+\label{ch:future}
+
+We have developed and evaluated a multimodal pipeline for predicting the logarithmic star formation rate of SDSS galaxies, comparing three model families (Decision Tree, VGGNet12, LightGBM) under photometry-only, spectroscopy-only, and fused settings. Our main conclusions are:
+
+\begin{enumerate}
+  \item \textbf{Best performer:} Early‐fusion LightGBM achieved the highest overall accuracy ($R^2=0.308$, MAE=0.19, RMSE=0.32), highlighting the effectiveness of tree‐based learners in combining heterogeneous features.
+  \item \textbf{CNN strength:} VGGNet12 on images alone reached $R^2=0.262$, confirming the power of deep convolutional features for morphological SFR indicators.
+  \item \textbf{Spectral smoothing:} Downsampling spectra improved generalization, suggesting that future work should explore learnable spectral smoothing or denoising layers.
+  \item \textbf{Regularization necessity:} Hyperparameter tuning (max depth, dropout, early stopping) was indispensable for controlling overfitting, underscoring the importance of systematic model selection.
+\end{enumerate}
+
+\noindent\textbf{Future directions.} Building on these results, we propose several avenues for further improvement:
+
+\begin{itemize}
+  \item \emph{Attention-based fusion.} Integrate cross-modal attention mechanisms to dynamically weight image vs.\ spectral cues per galaxy.
+  \item \emph{End-to-end architectures.} Develop unified neural architectures that jointly process pixel and spectral inputs, potentially leveraging transformers for both spatial and spectral attention.
+  \item \emph{Additional modalities.} Incorporate environmental metrics (e.g.\ local galaxy density), kinematic data, and infrared or radio observations to capture hidden star formation.
+  \item \emph{Uncertainty quantification.} Extend the framework to predict posterior distributions of SFR via Bayesian neural networks or ensemble methods, providing principled error bars.
+  \item \emph{Transfer learning.} Pretrain multimodal models on synthetic or lower-redshift samples, then fine-tune on rarer high-redshift galaxies to improve performance in data-scarce regimes.
+\end{itemize}
+
+Together, these enhancements promise to push SFR prediction closer to the theoretical limits set by observational uncertainties, enabling more accurate studies of galaxy evolution across cosmic time.
+\backmatter
+
+\printbibliography
+
+\end{document}
+
